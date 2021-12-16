@@ -3,10 +3,11 @@ import AuthCheck from "../../components/AuthCheck";
 import { useState } from "react";
 import { useRouter } from "next/router";
 import {
-  getFirestore,
-  doc,
-  updateDoc,
   serverTimestamp,
+  doc,
+  deleteDoc,
+  updateDoc,
+  getFirestore,
 } from "firebase/firestore";
 import { useDocumentDataOnce } from "react-firebase-hooks/firestore";
 import Link from "next/link";
@@ -38,6 +39,7 @@ function PostManager() {
     "posts",
     slug
   );
+
   const [post] = useDocumentDataOnce(postRef);
 
   return (

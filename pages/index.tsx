@@ -4,7 +4,7 @@ import PostFeed from "../components/PostFeed";
 import { GetServerSideProps } from "next";
 
 import Metatags from "../components/Metatags";
-import { firestore, postToJSON, getIt } from "../lib/firebase";
+import { firestore, postToJSON } from "../lib/firebase";
 import {
   Timestamp,
   query,
@@ -86,7 +86,7 @@ export default function Home(props) {
         </p>
       </div>
 
-      <PostFeed posts={posts} />
+      <PostFeed posts={posts} admin />
 
       {!loading && !postsEnd && (
         <button onClick={getMorePosts}>Load more</button>

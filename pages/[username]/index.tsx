@@ -54,7 +54,7 @@ export default function UserProfilePage({ user, posts }) {
         image={user.photoURL}
       />
       <UserProfile user={user} />
-      <PostFeed posts={posts} />
+      <PostFeed posts={posts} admin />
     </main>
   );
 }
