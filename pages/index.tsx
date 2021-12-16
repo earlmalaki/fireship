@@ -1,26 +1,35 @@
-import { useState } from 'react'
-import { firestore, postToJSON, fromMillis } from '../lib/firebase'
-import Loader from '../components/Loader'
-import PostFeed from '../components/PostFeed'
-import { GetServerSideProps } from 'next'
+import { useState } from "react";
+import Loader from "../components/Loader";
+import PostFeed from "../components/PostFeed";
+import { GetServerSideProps } from "next";
 
-import Head from 'next/head'
-import Image from 'next/image'
-import styles from '../styles/Home.module.css'
-import toast from 'react-hot-toast'
+import Metatags from "../components/Metatags";
+import { firestore, postToJSON, getIt } from "../lib/firebase";
+import {
+  Timestamp,
+  query,
+  where,
+  orderBy,
+  limit,
+  collectionGroup,
+  getDocs,
+  startAfter,
+  getFirestore,
+} from "firebase/firestore";
 
-const LIMIT = 1;
+const LIMIT = 5;
 
 export async function getServerSideProps() {
-  console.log("gSSP")
-  const postsQuery = firestore
-    .collectionGroup('posts')
-    .where('published', '==', true)
-    .orderBy('createdAt', 'desc')
-    .limit(LIMIT);
+  const ref = collectionGroup(getFirestore(), "posts");
+  const postsQuery = query(
+    ref,
+    where("published", "==", true),
+    orderBy("createdAt", "desc"),
+    limit(LIMIT)
+  );
 
-  const posts = (await postsQuery.get()).docs.map(postToJSON);
-  console.log("hello " + posts)
+  const posts = (await getDocs(postsQuery)).docs.map(postToJSON);
+
   return {
     props: { posts },
   };
@@ -31,37 +40,61 @@ export default function Home(props) {
   const [loading, setLoading] = useState(false);
   const [postsEnd, setPostsEnd] = useState(false);
 
+  // Get next page in pagination query
   const getMorePosts = async () => {
     setLoading(true);
     const last = posts[posts.length - 1];
-    const cursor = typeof last.createdAt === 'number' ? fromMillis(last.createdAt) : last.createdAt;
 
-    const query = firestore
-      .collectionGroup('posts')
-      .where('published', '==', true)
-      .orderBy('createdAt', 'desc')
-      .startAfter(cursor)
-      .limit(LIMIT)
+    const cursor =
+      typeof last.createdAt === "number"
+        ? Timestamp.fromMillis(last.createdAt)
+        : last.createdAt;
 
-    const newPosts = (await query.get()).docs.map((doc) => doc.data());
+    const ref = collectionGroup(getFirestore(), "posts");
+    const postsQuery = query(
+      ref,
+      where("published", "==", true),
+      orderBy("createdAt", "desc"),
+      startAfter(cursor),
+      limit(LIMIT)
+    );
+
+    const newPosts = (await getDocs(postsQuery)).docs.map((doc) => doc.data());
 
     setPosts(posts.concat(newPosts));
     setLoading(false);
 
     if (newPosts.length < LIMIT) {
-      setPostsEnd(true)
+      setPostsEnd(true);
     }
   };
 
   return (
     <main>
+      <Metatags title="Fireship Home" description="Get the latest tech post" />
+
+      <div className="card card-info">
+        <h2>💡 Next.js + Firebase - The Full Course</h2>
+        <p>
+          Welcome! This app is built with Next.js and Firebase and is loosely
+          inspired by Dev.to.
+        </p>
+        <p>
+          Sign up for an 👨‍🎤 account, ✍️ write posts, then 💞 heart content
+          created by other users. All public content is server-rendered and
+          search-engine optimized.
+        </p>
+      </div>
+
       <PostFeed posts={posts} />
 
-      {!loading && !postsEnd && <button onClick={getMorePosts}>Load more</button> }
+      {!loading && !postsEnd && (
+        <button onClick={getMorePosts}>Load more</button>
+      )}
 
       <Loader show={loading} />
 
-      {postsEnd && 'You have reached the end'}
+      {postsEnd && "You have reached the end"}
     </main>
-  )
+  );
 }

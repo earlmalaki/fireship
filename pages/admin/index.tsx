@@ -1,13 +1,23 @@
-import React from "react";
-import { useCollection } from "react-firebase-hooks/firestore";
+import styles from "../../styles/Admin.module.css";
 import AuthCheck from "../../components/AuthCheck";
-import { firestore, auth, serverTimestamp } from "../../lib/firebase";
 import PostFeed from "../../components/PostFeed";
 import { UserContext } from "../../lib/context";
-import { useContext } from "react";
+import { firestore, auth } from "../../lib/firebase";
+import {
+  serverTimestamp,
+  query,
+  collection,
+  orderBy,
+  getFirestore,
+  setDoc,
+  doc,
+} from "firebase/firestore";
+
+import { useContext, useState } from "react";
 import { useRouter } from "next/router";
-import { useState } from "react";
-import kebabcase from "lodash.kebabcase";
+
+import { useCollection } from "react-firebase-hooks/firestore";
+import kebabCase from "lodash.kebabcase";
 import toast from "react-hot-toast";
 
 export default function AdminPostsPage(props) {
@@ -22,19 +32,22 @@ export default function AdminPostsPage(props) {
 }
 
 function PostList() {
-  const postsRef = firestore
-    .collection("users")
-    .doc(auth.currentUser.uid)
-    .collection("posts");
-  const query = postsRef.orderBy("createdAt");
-  const [querySnapshot] = useCollection(query);
+  const ref = collection(
+    getFirestore(),
+    "users",
+    auth.currentUser.uid,
+    "posts"
+  );
+  const postQuery = query(ref, orderBy("createdAt"));
+
+  const [querySnapshot] = useCollection(postQuery);
 
   const posts = querySnapshot?.docs.map((doc) => doc.data());
 
   return (
     <>
       <h1>Manage your posts</h1>
-      <PostFeed posts={posts} />
+      <PostFeed posts={posts} admin />
     </>
   );
 }
@@ -45,7 +58,7 @@ function CreateNewPost() {
   const [title, setTitle] = useState("");
 
   // ensure slug is url safe
-  const slug = encodeURI(kebabcase(title));
+  const slug = encodeURI(kebabCase(title));
 
   // validate length
   const isValid = title.length > 3 && title.length < 100;
@@ -54,11 +67,7 @@ function CreateNewPost() {
   const createPost = async (e) => {
     e.preventDefault();
     const uid = auth.currentUser.uid;
-    const ref = firestore
-      .collection("users")
-      .doc(uid)
-      .collection("posts")
-      .doc(slug);
+    const ref = doc(getFirestore(), "users", uid, "posts", slug);
 
     const data = {
       title,
@@ -66,13 +75,13 @@ function CreateNewPost() {
       uid,
       username,
       published: false,
-      content: "#Hello World",
+      content: "# hello World",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       heartCount: 0,
     };
 
-    await ref.set(data);
+    await setDoc(ref, data);
 
     toast.success("Post created");
 
@@ -80,8 +89,19 @@ function CreateNewPost() {
   };
 
   return (
-    <form onSubmit="{createPost}"></form>
-  )
+    <form onSubmit={createPost}>
+      <input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="My Awesome Article!"
+        className={styles.input}
+      />
+      <p>
+        <strong>Slug:</strong> {slug}
+      </p>
+      <button type="submit" disabled={!isValid} className="btn-green">
+        Create New Post
+      </button>
+    </form>
+  );
 }
-
-

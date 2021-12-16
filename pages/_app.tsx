@@ -1,22 +1,19 @@
-import '../styles/globals.css'
-import Navbar from '../components/Navbar'
-import { Toaster } from 'react-hot-toast';
-import { UserContext } from '../lib/context';
-import { useUserData } from '../lib/hooks';
-import { auth } from '../lib/firebase';
+import "../styles/globals.css";
+import Navbar from "../components/Navbar";
+import { UserContext } from "../lib/context";
+import { useUserData } from "../lib/hooks";
+import { Toaster } from "react-hot-toast";
 
 function MyApp({ Component, pageProps }) {
-  const userData = useUserData()
+  const userData = useUserData();
 
   return (
-    <>
-      <UserContext.Provider value={userData}>
-        <Navbar />
-        <Component {...pageProps} />
-        <Toaster />
-      </UserContext.Provider>
-    </>
-  )
+    <UserContext.Provider value={userData}>
+      <Navbar />
+      <Component {...pageProps} />
+      <Toaster />
+    </UserContext.Provider>
+  );
 }
 
-export default MyApp
+export default MyApp;
