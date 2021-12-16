@@ -18,6 +18,7 @@ import {
 import Link from "next/link";
 import { useDocumentData } from "react-firebase-hooks/firestore";
 import { useContext } from "react";
+import HeartButton from "../../components/HeartButton";
 
 export async function getStaticProps({ params }) {
   const { username, slug } = params;
@@ -28,7 +29,7 @@ export async function getStaticProps({ params }) {
   if (userDoc) {
     // const postRef = userDoc.ref.collection('posts').doc(slug);
     const postRef = doc(getFirestore(), userDoc.ref.path, "posts", slug);
-    post = postToJSON(await postRef.get());
+    post = postToJSON(await getDoc(postRef));
     path = postRef.path;
   }
 
@@ -71,6 +72,16 @@ export default function Post(props) {
         <p>
           <strong>{post.heartCount || 0} 🤍</strong>
         </p>
+
+        <AuthCheck
+          fallback={
+            <Link href="/enter">
+              <button>💗 Sign Up</button>
+            </Link>
+          }
+        >
+          <HeartButton postRef={postRef} />
+        </AuthCheck>
       </aside>
     </main>
   );
